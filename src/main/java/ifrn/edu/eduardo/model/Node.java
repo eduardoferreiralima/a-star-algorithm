@@ -7,11 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Node extends JPanel {
-    public int r, c, g = 9999, h, f;
-    public String type = "EMPTY";
+    public int r, c;
+    public int g = 99999, h, f;
     public Node parent;
+    public String type = "EMPTY";
 
-    private static Map<String, Image> sprites = new HashMap<>();
+    private static final Map<String, Image> sprites = new HashMap<>();
 
     public Node(int r, int c) {
         this.r = r;
@@ -36,6 +37,7 @@ public class Node extends JPanel {
         if (url == null) return null;
         return new ImageIcon(url).getImage();
     }
+
     public static Image getSprite(String key) {
         if (sprites.isEmpty()) {
             new Node(0,0).loadSprites();
@@ -43,9 +45,32 @@ public class Node extends JPanel {
         return sprites.get(key);
     }
 
+    /**
+     * Limpa apenas os dados da busca anterior (g, h, f, parent e cores de busca).
+     * Mantém Paredes, Herói e Criminoso intactos.
+     */
+    public void clearSearchData() {
+        g = 99999;
+        h = 0;
+        f = 0;
+        parent = null;
+        if (type.equals("OPEN") || type.equals("CLOSED") || type.equals("PATH")) {
+            type = "EMPTY";
+        }
+    }
+
+    /**
+     * Reseta o nó completamente para o estado inicial (Grama).
+     */
+    public void reset() {
+        clearSearchData();
+        type = "EMPTY";
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         g2d.setColor(new Color(40, 44, 52));
         g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -56,47 +81,47 @@ public class Node extends JPanel {
         }
 
         Image objImg = sprites.get(type);
-        if (objImg != null && !type.equals("EMPTY")) {
+        if (objImg != null && (type.equals("WALL") || type.equals("START") || type.equals("END"))) {
             g2d.drawImage(objImg, 0, 0, getWidth(), getHeight(), this);
-        } else {
+        } else if (!type.equals("EMPTY") && !isSearchType()) {
             drawFallback(g2d);
         }
 
         drawOverlay(g2d);
     }
 
-    @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(45, 45);
+    private boolean isSearchType() {
+        return type.equals("OPEN") || type.equals("CLOSED") || type.equals("PATH");
     }
 
     private void drawFallback(Graphics2D g2d) {
         if (type.equals("WALL")) {
-            g2d.setColor(new Color(240, 240, 240, 200));
-            g2d.fillRoundRect(4, 4, getWidth()-8, getHeight()-8, 8, 8);
-        } else if (type.equals("START")) {
-            g2d.setColor(new Color(0, 255, 100));
-            g2d.fillOval(6, 6, getWidth()-12, getHeight()-12);
-        } else if (type.equals("END")) {
-            g2d.setColor(new Color(255, 0, 80));
-            g2d.fillRect(8, 8, getWidth()-16, getHeight()-16);
+            g2d.setColor(new Color(200, 200, 200, 180));
+            g2d.fillRoundRect(4, 4, getWidth()-8, getHeight()-8, 5, 5);
         }
     }
 
     private void drawOverlay(Graphics2D g2d) {
-        if (type.equals("OPEN")) {
-            g2d.setColor(new Color(0, 200, 255, 100));
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-        } else if (type.equals("CLOSED")) {
-            g2d.setColor(new Color(150, 0, 255, 60));
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-        } else if (type.equals("PATH")) {
-            g2d.setColor(new Color(255, 255, 0, 140));
-            g2d.fillOval(getWidth()/3, getHeight()/3, getWidth()/3, getHeight()/3);
+        switch (type) {
+            case "OPEN" -> {
+                g2d.setColor(new Color(0, 200, 255, 80));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+            case "CLOSED" -> {
+                g2d.setColor(new Color(150, 0, 255, 40));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+            case "PATH" -> {
+                // Glow amarelo para o caminho final
+                g2d.setColor(new Color(255, 255, 0, 160));
+                int size = getWidth() / 2;
+                g2d.fillOval(getWidth()/4, getHeight()/4, size, size);
+            }
         }
     }
 
-    public void reset() {
-        type = "EMPTY"; g = 9999; h = 0; f = 0; parent = null;
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(45, 45);
     }
 }

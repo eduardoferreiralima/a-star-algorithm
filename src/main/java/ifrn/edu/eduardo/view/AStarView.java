@@ -2,6 +2,7 @@ package ifrn.edu.eduardo.view;
 
 import ifrn.edu.eduardo.model.Node;
 import ifrn.edu.eduardo.algorithm.AStarAlgorithm;
+import ifrn.edu.eduardo.algorithm.GreedyAlgorithm; // Certifique-se de que a classe existe
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
@@ -16,16 +17,16 @@ public class AStarView extends JFrame {
     private Node startNode, endNode;
     private boolean isRunning = false;
     private String editMode = "WALL";
-
+    private JComboBox<String> algoSelector;
+    private long lastExecutionTime = 0;
     private final int WIN_WIDTH = 1300;
     private final int WIN_HEIGHT = 850;
     private final int SIDE_WIDTH = 300;
-
     private final Color COLOR_SELECTED = new Color(255, 193, 7);
     private final Color COLOR_BG_SIDE = new Color(25, 25, 35);
 
     public AStarView() {
-        setTitle("IFRN - A* Tactical Solver");
+        setTitle("A* vs Guloso - Performance Analyzer");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(WIN_WIDTH, WIN_HEIGHT);
         setResizable(false);
@@ -77,6 +78,18 @@ public class AStarView extends JFrame {
         gbc.insets = new Insets(10, 15, 10, 15);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0; gbc.gridy = 0;
+
+        JLabel lblAlgo = new JLabel("ALGORITMO DE BUSCA", SwingConstants.CENTER);
+        lblAlgo.setForeground(Color.GRAY);
+        lblAlgo.setFont(new Font("Arial", Font.BOLD, 11));
+        side.add(lblAlgo, gbc); gbc.gridy++;
+
+        algoSelector = new JComboBox<>(new String[]{"Algoritmo A*", "Algoritmo Guloso"});
+        algoSelector.setBackground(new Color(40, 40, 50));
+        algoSelector.setForeground(Color.WHITE);
+        side.add(algoSelector, gbc); gbc.gridy++;
+
+        side.add(Box.createVerticalStrut(10), gbc); gbc.gridy++;
 
         JButton btnRun = createBtn("INICIAR OPERAÇÃO", new Color(0, 255, 100), 240, 45);
         JButton btnMaze = createBtn("GERAR LABIRINTO", Color.CYAN, 240, 45);
@@ -176,9 +189,19 @@ public class AStarView extends JFrame {
             }
         }
         isRunning = true;
+
+        boolean useAStar = algoSelector.getSelectedIndex() == 0;
+        if (useAStar) {
+            lastExecutionTime = AStarAlgorithm.solve(startNode, endNode, grid, ROWS, COLS);
+        } else {
+            lastExecutionTime = GreedyAlgorithm.solve(startNode, endNode, grid, ROWS, COLS);
+        }
+        // Limpa custos da medição para a animação visual não bugar
+        for(int r=0; r<ROWS; r++) for(int c=0; c<COLS; c++) { grid[r][c].g = 99999; grid[r][c].parent = null; }
+
         new SwingWorker<Boolean, Node>() {
             @Override protected Boolean doInBackground() throws Exception {
-                PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingInt(n -> n.f));
+                PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingInt(n -> useAStar ? n.f : n.h));
                 Set<Node> closed = new HashSet<>();
                 startNode.g = 0; startNode.h = AStarAlgorithm.calcH(startNode, endNode);
                 startNode.f = startNode.g + startNode.h;
@@ -194,7 +217,8 @@ public class AStarView extends JFrame {
                         int tG = curr.g + cost;
                         if (tG < n.g) {
                             n.parent = curr; n.g = tG;
-                            n.h = AStarAlgorithm.calcH(n, endNode); n.f = n.g + n.h;
+                            n.h = AStarAlgorithm.calcH(n, endNode);
+                            n.f = useAStar ? (n.g + n.h) : n.h;
                             if (!open.contains(n)) { if(n != endNode) n.type = "OPEN"; open.add(n); }
                         }
                     }
@@ -239,21 +263,26 @@ public class AStarView extends JFrame {
         String titulo = found ? "MISSÃO CUMPRIDA" : "ALVO PERDIDO";
         String msg = found ? "O criminoso foi capturado! Herói aguarda ordens." : "O criminoso escapou do cerco.";
         String corHex = found ? "#00FF64" : "#FF0050";
+
         Image img = Node.getSprite(found ? "CAPTURED_MSG" : "ESCAPED_MSG");
         ImageIcon icon = (img != null) ? new ImageIcon(img.getScaledInstance(120, 120, Image.SCALE_SMOOTH)) : null;
 
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(400, 250));
+        panel.setPreferredSize(new Dimension(400, 300)); // Aumentei um pouco para caber a imagem + tempo
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.gridy = GridBagConstraints.RELATIVE;
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(5, 10, 5, 10);
         gbc.anchor = GridBagConstraints.CENTER;
-        if (icon != null) panel.add(new JLabel(icon), gbc);
+
+        if (icon != null) {
+            panel.add(new JLabel(icon), gbc);
+        }
 
         JLabel label = new JLabel("<html><div style='text-align: center; width: 250px; font-family: Arial;'>" +
                 "<h1 style='color: " + corHex + "; margin: 0;'>" + titulo + "</h1>" +
                 "<p style='color: #BBBBBB; font-size: 13px; margin-top: 5px;'>" + msg + "</p>" +
+                "<p style='color: #FFC107; font-size: 14px; margin-top: 10px;'>Tempo de Resposta: <b>" + lastExecutionTime + " µs</b></p>" +
                 "</div></html>");
         panel.add(label, gbc);
 
@@ -261,7 +290,8 @@ public class AStarView extends JFrame {
         UIManager.put("Panel.background", new Color(25, 25, 35));
         UIManager.put("Button.background", new Color(40, 40, 60));
         UIManager.put("Button.foreground", Color.WHITE);
-        JOptionPane.showMessageDialog(this, panel, "Relatório", JOptionPane.PLAIN_MESSAGE, null);
+
+        JOptionPane.showMessageDialog(this, panel, "Relatório Tático", JOptionPane.PLAIN_MESSAGE, null);
     }
 
     private void ajustarTamanhoMapa(int r, int c) {
