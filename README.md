@@ -1,34 +1,42 @@
-# 🛡️ IFRN - A* Tactical Solver
 
-Um simulador tático de busca de caminho (pathfinding) desenvolvido em Java, utilizando o algoritmo **A*** para encontrar a rota mais eficiente entre um herói e um alvo em um ambiente de grid dinâmico.
+# 🛡️ IFRN - Tactical Pathfinding Benchmarker
 
-
+Um simulador tático de busca de caminho desenvolvido em Java para a disciplina de Inteligência Artificial. O projeto compara o desempenho entre buscas ótimas e buscas gulosas em um ambiente de grid dinâmico com obstáculos.
 
 ## 🚀 Funcionalidades
 
-* **Algoritmo A* Real-time**: Visualização detalhada do processo de busca (nós explorados e fronteiras).
-* **Edição Dinâmica**: Altere a posição do herói, do criminoso ou desenhe obstáculos em tempo real.
-* **Escala Inteligente**: Ajuste o tamanho do mapa proporcionalmente através de um slider, suportando desde grids simples até mapas complexos.
-* **Geração de Labirintos**: Algoritmo aleatório para criação de cenários de teste.
-* **Interface Estilizada**: UI em tons escuros (dark mode) com sprites customizados para paredes, grama e personagens.
+* **Benchmarking de Algoritmos**: Compare em tempo real o **A* (Ótimo)** vs **Greedy Search (Guloso)**.
+* **Métrica de Performance**: Medição precisa do tempo de processamento em microssegundos () exibida em um relatório tático após cada operação.
+* **Visualização Progressiva**: Animação detalhada dos nós em aberto (`OPEN`), nós explorados (`CLOSED`) e o caminho final (`PATH`).
+* **Edição Dinâmica**: Ferramentas para desenhar paredes, reposicionar o Herói (Start) e o Alvo (End).
+* **Escala Inteligente**: Slider para ajuste de resolução do grid, permitindo testar o estresse dos algoritmos em mapas de grande escala.
+* **Geração de Cenários**: Gerador de labirintos aleatórios para testes de complexidade de caminho.
+
+## 🧠 Algoritmos Implementados
+
+* **A* Search**: Garante o caminho mais curto utilizando , equilibrando custo real e distância estimada.
+* **Greedy Best-First Search**: Foca puramente na velocidade através da heurística , ideal para caminhos rápidos em mapas abertos.
 
 ## 🛠️ Tecnologias
 
 * **Linguagem**: Java 21
-* **Interface**: Swing (Java GUI)
+* **Interface**: Swing (Java GUI) com renderização de sprites e transparência.
+* **Arquitetura**: MVC (Model-View-Controller) com separação estrita de classes de algoritmos.
 * **Gerenciador de Dependências**: Maven
 
 ## 📁 Estrutura do Projeto
 
-* `src/main/java/ifrn/edu/eduardo/algorithm`: Lógica matemática e heurística do A*.
-* `src/main/java/ifrn/edu/eduardo/model`: Definição dos nós e gerenciamento de sprites.
-* `src/main/java/ifrn/edu/eduardo/view`: Interface gráfica e manipulação de eventos.
-* `src/main/resources`: Assets visuais (PNGs).
+* `ifrn.edu.eduardo.algorithm`: Classes independentes para cada algoritmo de busca.
+* `ifrn.edu.eduardo.model`: Classe `Node` que gerencia estados de busca e carregamento de assets.
+* `ifrn.edu.eduardo.view`: JFrame principal com painel lateral de controle e grid de renderização.
+* `src/main/resources`: Sprites customizados (`heroi.png`, `criminoso.png`, `parede.png`, etc.).
 
 ## 🎮 Como Executar
 
 1. Certifique-se de ter o **JDK 21** instalado.
 2. Clone o repositório.
-3. Execute a classe `Main.java` ou utilize o Maven:
-   ```bash
-   mvn clean compile exec:java -Dexec.mainClass="ifrn.edu.eduardo.Main"
+3. Compile e execute via terminal ou sua IDE de preferência:
+```bash
+mvn clean compile exec:java -Dexec.mainClass="ifrn.edu.eduardo.Main"
+
+```
